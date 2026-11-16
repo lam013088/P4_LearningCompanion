@@ -104,17 +104,48 @@
     .progress-wrap { background: #e2e8f0; border-radius: 999px; height: 10px; overflow: hidden; margin: 6px 0 4px; }
     .progress-fill { background: linear-gradient(90deg, #38bdf8, #22c55e); height: 100%; transition: width 0.25s; }
     .step-badge-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
-    .task-tag { background: #dbeafe; color: #1e40af; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 800; }
-    .step-tag { background: #fef08a; color: #854d0e; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 800; }
+    .task-tag { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 8px; font-size: 15px; font-weight: 800; }
+    .step-tag { background: #fef08a; color: #854d0e; padding: 4px 10px; border-radius: 8px; font-size: 14px; font-weight: 800; }
     .instruction-box {
       background: #f0f9ff; border-left: 5px solid var(--pk-blue); border-radius: 10px;
-      padding: 12px; font-size: 15px; font-weight: 700; line-height: 1.6; color: #0f172a; margin-bottom: 10px;
+      padding: 14px; font-size: 19px; font-weight: 700; line-height: 1.65; color: #0f172a; margin-bottom: 10px;
+    }
+    .kw-bracket {
+      background: #dbeafe; color: #1e3a8a; border: 1px solid #93c5fd;
+      padding: 1px 6px; border-radius: 6px; font-weight: 900; display: inline-block; margin: 0 2px;
+    }
+    .kw-quote {
+      background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+      padding: 1px 6px; border-radius: 6px; font-weight: 900; display: inline-block; margin: 0 2px;
+    }
+    @keyframes pokeballPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.24); }
     }
     .path-chip {
-      display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid #bae6fd;
-      border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 800; color: #0369a1; margin-bottom: 10px;
+      display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #bae6fd;
+      border-radius: 10px; padding: 7px 12px; font-size: 14px; font-weight: 800; color: #0369a1; margin-bottom: 10px;
     }
-    .path-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+    .path-chip img {
+      width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+      animation: pokeballPulse 1.2s ease-in-out infinite; flex-shrink: 0;
+    }
+    .gif-zoom-bar {
+      display: flex; justify-content: flex-end; padding: 6px 8px; background: #f0f9ff; border-top: 1px solid #bae6fd;
+    }
+    .lightbox-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 16px; z-index: 9999;
+    }
+    .lightbox-overlay img {
+      max-width: 96vw; max-height: 82vh; border-radius: 14px; border: 3px solid #facc15;
+      background: #fff; box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+    }
+    .lightbox-close {
+      margin-top: 14px; background: #facc15; color: #422006; border: none;
+      border-radius: 999px; padding: 10px 22px; font-size: 15px; font-weight: 800; cursor: pointer;
+    }
     .hint-box {
       margin-top: 8px; padding: 10px; border-radius: 12px; background: #fffbeb; border: 1.5px solid #fde68a;
       font-size: 13px; line-height: 1.5;
@@ -208,20 +239,7 @@
         <option value="第9課_Scratch繪製星圖">第9課_Scratch繪製星圖</option>
       </select>
 
-      <label class="field-label">4. 選擇挑戰模式</label>
-      <div class="grid-2">
-        <button type="button" id="mode-practice" class="mode-btn active" onclick="selectMode('練習模式')">
-          <strong>練習模式</strong>
-          <span>遞進引導・可看頁碼與 GIF</span>
-        </button>
-        <button type="button" id="mode-exam" class="mode-btn" onclick="selectMode('考試模式')">
-          <strong>考試模式</strong>
-          <span>可先跳題・不提供恆常提示</span>
-        </button>
-      </div>
-
-      <button class="btn btn-primary" style="margin-top:14px;" onclick="startSession()">開始任務 ▶</button>
-      <p id="sheet-status" class="muted" style="margin-top:8px;text-align:center;">資料來源：P4 資訊科技電子書任務總表（含第5課離線備援）</p>
+      <button class="btn btn-primary" style="margin-top:16px;" onclick="startSession()">開始任務 ▶</button>
     </section>
 
     <!-- 任務操作頁 -->
@@ -260,8 +278,11 @@
         </div>
 
         <div id="hint-tier2" class="gif-frame hidden">
-          <img id="img-gif" src="" alt="操作示範 GIF" onerror="this.style.display='none'; document.getElementById('gif-fallback').classList.remove('hidden');" />
+          <img id="img-gif" src="" alt="操作示範 GIF" style="cursor:zoom-in;" onclick="openGifLightbox()" onerror="this.style.display='none'; document.getElementById('gif-fallback').classList.remove('hidden');" />
           <div id="gif-fallback" class="gif-fallback hidden">示範動圖載入失敗，請先對照「第一層：書本頁碼」或向老師舉手示意！</div>
+          <div class="gif-zoom-bar">
+            <button type="button" class="btn btn-outline" style="font-size:13px;padding:6px 12px;" onclick="openGifLightbox()">🔍 放大看清楚</button>
+          </div>
         </div>
 
         <!-- 自我核檢 -->
@@ -284,6 +305,12 @@
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- GIF 放大燈箱 -->
+  <div id="gif-lightbox" class="lightbox-overlay hidden" onclick="closeGifLightbox()">
+    <img id="img-gif-large" src="" alt="放大示範動圖" onclick="event.stopPropagation()" />
+    <button type="button" class="lightbox-close" onclick="closeGifLightbox()">✕ 關閉放大檢視</button>
   </div>
 
   <!-- 固定底部導覽列 -->
@@ -324,6 +351,31 @@
       doneMap: {}, skipMap: {}, logs: JSON.parse(localStorage.getItem('p4_assist_logs') || '[]')
     };
 
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function highlightKeywords(str) {
+      return escapeHtml(str)
+        .replace(/【([^】]+)】/g, '<span class="kw-bracket">【$1】</span>')
+        .replace(/「([^」]+)」/g, '<span class="kw-quote">「$1」</span>');
+    }
+
+    function openGifLightbox() {
+      const src = document.getElementById('img-gif').src;
+      if (!src) return;
+      document.getElementById('img-gif-large').src = src;
+      document.getElementById('gif-lightbox').classList.remove('hidden');
+    }
+
+    function closeGifLightbox() {
+      document.getElementById('gif-lightbox').classList.add('hidden');
+    }
+
     function toLessonCode(lessonName) {
       const m = String(lessonName || '').match(/^第(\d+)課/);
       return m ? ('L' + m[1].padStart(2, '0')) : String(lessonName || '').split('_')[0];
@@ -340,12 +392,6 @@
       const opt = document.createElement('option');
       opt.value = v; opt.textContent = v + ' 號';
       selNo.appendChild(opt);
-    }
-
-    function selectMode(m) {
-      state.mode = m;
-      document.getElementById('mode-practice').classList.toggle('active', m === '練習模式');
-      document.getElementById('mode-exam').classList.toggle('active', m === '考試模式');
     }
 
     async function loadLessonSteps(sheetName) {
@@ -373,7 +419,6 @@
       const loaded = await loadLessonSteps(state.lesson);
       state.steps = state.mode === '考試模式' ? loaded.data.filter(s => s.exam !== 'N') : loaded.data;
       state.idx = 0; state.doneMap = {}; state.skipMap = {};
-      document.getElementById('sheet-status').textContent = loaded.source;
       document.getElementById('hdr-student').textContent = `${state.className}-${state.studentNo}`;
       const modeEl = document.getElementById('hdr-mode');
       modeEl.textContent = state.mode;
@@ -395,7 +440,7 @@
       document.getElementById('progress-fill').style.width = `${Math.round(((state.idx + 1) / state.steps.length) * 100)}%`;
       document.getElementById('txt-task').textContent = `${s.taskNo} · ${s.taskName}`;
       document.getElementById('txt-step-num').textContent = s.stepNo;
-      document.getElementById('txt-instruction').textContent = s.cmd;
+      document.getElementById('txt-instruction').innerHTML = highlightKeywords(s.cmd);
       document.getElementById('txt-path').textContent = s.path;
       document.getElementById('txt-page').textContent = s.page;
       document.getElementById('txt-tip').textContent = s.tip || '留意按鈕位置與圖示名稱。';
