@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>P4 資訊科技｜寶可夢操作輔助小幫手（第5課示範）</title>
+  <style>
+    :root {
+      --pk-blue: #0284c7;
+      --pk-sky: #e0f2fe;
+      --pk-navy: #0f172a;
+      --pk-yellow: #facc15;
+      --pk-amber: #d97706;
+      --pk-red: #ef4444;
+      --pk-green: #16a34a;
+      --card-bg: rgba(255, 255, 255, 0.94);
+      --border: #bae6fd;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+      background: #e0f2fe url('assets/bg_water_cloud.jpg') center/cover fixed no-repeat;
+      color: var(--pk-navy);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 8px;
+    }
+    .app-shell {
+      width: 100%;
+      max-width: 430px; /* 專為螢幕側邊窄版雙視窗停靠設計 */
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 72px;
+    }
+    .topbar {
+      background: linear-gradient(135deg, #0369a1, #0284c7);
+      color: #fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      position: sticky;
+      top: 6px;
+      z-index: 20;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .mascot-mini {
+      width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--pk-yellow); background: #fff; flex-shrink: 0;
+    }
+    .topbar-title { font-size: 14px; font-weight: 800; line-height: 1.25; }
+    .topbar-sub { font-size: 11px; opacity: 0.92; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(255,255,255,0.2); padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .pill-exam { background: #fef08a; color: #854d0e; }
+    .card {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+    .home-hero {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .home-hero img {
+      width: 68px; height: 68px; border-radius: 16px; object-fit: cover;
+      border: 2px solid var(--pk-yellow); background: #fff;
+    }
+    .h1 { font-size: 17px; font-weight: 800; color: #0369a1; }
+    .muted { font-size: 12px; color: #475569; line-height: 1.5; }
+    label.field-label { display: block; font-size: 12px; font-weight: 800; color: #0369a1; margin: 10px 0 4px; }
+    select, input {
+      width: 100%; padding: 9px 10px; border-radius: 10px; border: 1.5px solid #cbd5e1;
+      font-size: 14px; font-family: inherit; background: #fff;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mode-btn {
+      border: 2px solid #cbd5e1; border-radius: 12px; padding: 10px 8px; background: #f8fafc;
+      cursor: pointer; text-align: left; transition: 0.15s;
+    }
+    .mode-btn.active { border-color: var(--pk-blue); background: #eff6ff; box-shadow: 0 0 0 2px rgba(2,132,199,0.18); }
+    .mode-btn strong { display: block; font-size: 13px; color: #0f172a; }
+    .mode-btn span { font-size: 11px; color: #475569; }
+    .btn {
+      border: none; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 800;
+      cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; width: 100%; }
+    .btn-yellow { background: linear-gradient(135deg, #facc15, #eab308); color: #422006; }
+    .btn-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+    .btn-outline { background: #fff; color: #0369a1; border: 1.5px solid #7dd3fc; }
+    .btn-skip { background: #fef3c7; color: #92400e; border: 1.5px solid #fcd34d; }
+    .progress-wrap { background: #e2e8f0; border-radius: 999px; height: 10px; overflow: hidden; margin: 6px 0 4px; }
+    .progress-fill { background: linear-gradient(90deg, #38bdf8, #22c55e); height: 100%; transition: width 0.25s; }
+    .step-badge-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+    .task-tag { background: #dbeafe; color: #1e40af; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 800; }
+    .step-tag { background: #fef08a; color: #854d0e; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 800; }
+    .instruction-box {
+      background: #f0f9ff; border-left: 5px solid var(--pk-blue); border-radius: 10px;
+      padding: 12px; font-size: 15px; font-weight: 700; line-height: 1.6; color: #0f172a; margin-bottom: 10px;
+    }
+    .path-chip {
+      display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid #bae6fd;
+      border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 800; color: #0369a1; margin-bottom: 10px;
+    }
+    .path-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+    .hint-box {
+      margin-top: 8px; padding: 10px; border-radius: 12px; background: #fffbeb; border: 1.5px solid #fde68a;
+      font-size: 13px; line-height: 1.5;
+    }
+    .gif-frame {
+      margin-top: 8px; border-radius: 10px; overflow: hidden; border: 2px solid #7dd3fc; background: #fff;
+    }
+    .gif-frame img { width: 100%; display: block; }
+    .gif-fallback {
+      padding: 12px; text-align: center; font-size: 12px; color: #b45309; background: #fffbeb; font-weight: 700;
+    }
+    .check-box {
+      margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #f0fdf4; border: 2px solid #86efac;
+      display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+    }
+    .check-box input { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: #16a34a; }
+    .check-box span { font-size: 13px; font-weight: 700; color: #166534; line-height: 1.45; }
+    .step-dots { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .dot-btn {
+      width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid #cbd5e1; background: #fff;
+      font-size: 11px; font-weight: 800; cursor: pointer; color: #334155;
+    }
+    .dot-btn.current { border-color: var(--pk-blue); background: #0284c7; color: #fff; }
+    .dot-btn.done { border-color: #16a34a; background: #dcfce7; color: #166534; }
+    .dot-btn.skipped { border-color: #d97706; background: #fef3c7; color: #92400e; }
+    .bottom-nav {
+      position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+      width: calc(100% - 16px); max-width: 430px;
+      background: rgba(255,255,255,0.96); border: 2px solid #bae6fd; border-radius: 16px;
+      padding: 8px; display: grid; grid-template-columns: 1fr 0.8fr 1.2fr; gap: 6px;
+      box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.12); z-index: 30;
+    }
+    .hidden { display: none !important; }
+    .complete-wrap { text-align: center; padding: 12px 4px; }
+    .complete-wrap img { width: 96px; height: 96px; border-radius: 20px; object-fit: cover; margin-bottom: 8px; }
+    .small-tools { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 頂部狀態列 -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="mascot-mini" src="assets/mascot_guide.jpg" alt="寶可夢小幫手" onerror="this.style.display='none'" />
+        <div>
+          <div class="topbar-title">P4 寶可夢操作小幫手</div>
+          <div class="topbar-sub">
+            <span id="hdr-student" class="pill">未登入</span>
+            <span id="hdr-mode" class="pill">主頁</span>
+          </div>
+        </div>
+      </div>
+      <button id="btn-top-home" class="btn btn-outline hidden" style="padding:5px 10px;font-size:12px;" onclick="goHome()">主頁</button>
+    </header>
+
+    <!-- 主頁：班別/學號/課次/模式選擇 -->
+    <section id="view-home" class="card">
+      <div class="home-hero">
+        <img src="assets/mascot_guide.jpg" alt="小幫手" onerror="this.style.display='none'" />
+        <div>
+          <div class="h1">準備出發做任務！</div>
+          <p class="muted">請先選好班別、學號（不用輸入姓名），再選課次與模式。</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label class="field-label" for="sel-class">1. 選擇班別</label>
+          <select id="sel-class">
+            <option value="P4A">P4A</option><option value="P4B">P4B</option>
+            <option value="P4C">P4C</option><option value="P4D">P4D</option>
+            <option value="P4E">P4E</option><option value="P4F">P4F</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="sel-no">2. 選擇學號</label>
+          <select id="sel-no"></select>
+        </div>
+      </div>
+
+      <label class="field-label" for="sel-lesson">3. 選擇課次（自動讀取雲端總表）</label>
+      <select id="sel-lesson">
+        <option value="第5課_水和雲動畫" selected>第5課_水和雲動畫（首批示範・11步驟）</option>
+        <option value="第1課_速成輸入法">第1課_速成輸入法</option>
+        <option value="第2課_速成輸入法練習">第2課_速成輸入法練習</option>
+        <option value="第3課_認識PowerPoint">第3課_認識PowerPoint</option>
+        <option value="第4課_四季的變化">第4課_四季的變化</option>
+        <option value="第6課_太陽系動畫">第6課_太陽系動畫</option>
+        <option value="第7課_探索機器學習">第7課_探索機器學習</option>
+        <option value="第8課_編程流程圖">第8課_編程流程圖</option>
+        <option value="第9課_Scratch繪製星圖">第9課_Scratch繪製星圖</option>
+      </select>
+
+      <label class="field-label">4. 選擇挑戰模式</label>
+      <div class="grid-2">
+        <button type="button" id="mode-practice" class="mode-btn active" onclick="selectMode('練習模式')">
+          <strong>練習模式</strong>
+          <span>遞進引導・可看頁碼與 GIF</span>
+        </button>
+        <button type="button" id="mode-exam" class="mode-btn" onclick="selectMode('考試模式')">
+          <strong>考試模式</strong>
+          <span>可先跳題・不提供恆常提示</span>
+        </button>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="startSession()">開始任務 ▶</button>
+      <p id="sheet-status" class="muted" style="margin-top:8px;text-align:center;">資料來源：P4 資訊科技電子書任務總表（含第5課離線備援）</p>
+    </section>
+
+    <!-- 任務操作頁 -->
+    <section id="view-step" class="hidden">
+      <div class="card" style="padding:10px 14px;">
+        <div class="step-badge-row" style="margin-bottom:2px;">
+          <span id="txt-lesson-title" style="font-size:13px;font-weight:800;color:#0369a1;">第5課_水和雲動畫</span>
+          <span id="txt-progress" style="font-size:12px;font-weight:800;color:#475569;">1 / 11</span>
+        </div>
+        <div class="progress-wrap"><div id="progress-fill" class="progress-fill" style="width:9%;"></div></div>
+        <div id="step-dots" class="step-dots"></div>
+      </div>
+
+      <div class="card">
+        <div class="step-badge-row">
+          <span id="txt-task" class="task-tag">任務 1 · 套用小水滴佈景主題</span>
+          <span id="txt-step-num" class="step-tag">步驟 1.1</span>
+        </div>
+
+        <div id="txt-instruction" class="instruction-box"></div>
+
+        <div id="box-path" class="path-chip">
+          <img src="assets/hint_arrow.jpg" alt="位置" onerror="this.style.display='none'" />
+          <span id="txt-path"></span>
+        </div>
+
+        <!-- 練習模式兩層提示 -->
+        <div id="hint-controls" class="grid-2">
+          <button type="button" class="btn btn-yellow" style="font-size:13px;padding:8px;" onclick="toggleHint(1)">第一層：書本頁碼</button>
+          <button type="button" class="btn btn-outline" style="font-size:13px;padding:8px;" onclick="toggleHint(2)">第二層：示範 GIF</button>
+        </div>
+
+        <div id="hint-tier1" class="hint-box hidden">
+          <strong>課本位置：</strong><span id="txt-page"></span><br/>
+          <strong>避坑提醒：</strong><span id="txt-tip"></span>
+        </div>
+
+        <div id="hint-tier2" class="gif-frame hidden">
+          <img id="img-gif" src="" alt="操作示範 GIF" onerror="this.style.display='none'; document.getElementById('gif-fallback').classList.remove('hidden');" />
+          <div id="gif-fallback" class="gif-fallback hidden">示範動圖載入失敗，請先對照「第一層：書本頁碼」或向老師舉手示意！</div>
+        </div>
+
+        <!-- 自我核檢 -->
+        <label class="check-box">
+          <input type="checkbox" id="chk-verify" onchange="onVerifyChange()" />
+          <span id="txt-verify"></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- 完成結算頁 -->
+    <section id="view-complete" class="card hidden">
+      <div class="complete-wrap">
+        <img src="assets/badge_clear.jpg" alt="過關徽章" onerror="this.style.display='none'" />
+        <div class="h1" style="font-size:20px;">恭喜完成本課挑戰！</div>
+        <p id="txt-summary" class="muted" style="margin-top:6px;"></p>
+        <div class="small-tools">
+          <button class="btn btn-primary" onclick="goHome()">返回主頁</button>
+          <button class="btn btn-outline" onclick="exportLogsCSV()">匯出本機學習記錄 (CSV)</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 固定底部導覽列 -->
+  <nav id="bottom-nav" class="bottom-nav hidden">
+    <button id="btn-prev" class="btn btn-outline" onclick="prevStep()">◀ 上一步</button>
+    <button class="btn btn-outline" onclick="goHome()">主頁</button>
+    <button id="btn-next" class="btn btn-green" onclick="nextStep()">下一步 ▶</button>
+  </nav>
+
+  <script src="js/config.js"></script>
+  <script>
+    const DEFAULT_CONFIG = {
+      TASK_SHEET_ID: '1hudzjFBybfCnXx0QkxA9X1pXBVrMXYcBTb0rbUeDNuQ',
+      LOG_SHEET_ID: '1Gv-IEOsEAwsWnBd-UoKWZjzUxRKwZf4zyhaUBH43o_8',
+      GAS_LOG_URL: 'https://script.google.com/macros/s/AKfycbyv1jRTgCVfuUzk0TyZPcsXoNTUfVxBQWEiIYA90qws5K__RA85pZWYUyNg7GClW3c/exec'
+    };
+    const CONFIG = Object.assign({}, DEFAULT_CONFIG, window.APP_CONFIG || {});
+
+    // 第5課實頁完整備援資料（與雲端總表 100% 同步）
+    const L05_FALLBACK = [
+      { taskNo:'任務 1', taskName:'套用小水滴佈景主題', stepNo:'步驟 1.1', cmd:'開啟空白簡報後，先找頂部【設計】標籤按一下，在「佈景主題」找出【小水滴】按一下套用，再輸入標題「水和雲」。', path:'設計 ➔ 佈景主題（小水滴）', page:'課本第5課 P.28', gif:'gifs/L05_t1_1.gif', check:'投影片已經套用小水滴佈景主題並寫好標題「水和雲」了！', exam:'Y', tip:'套用主題後，文字顏色、大小和位置會自動變美（P.27）。' },
+      { taskNo:'任務 2', taskName:'新增只有標題頁與插海浪圖示', stepNo:'步驟 2.1', cmd:'先找【插入】➔【新投影片 ▼】選【只有標題】，輸入標題「地球大部分的表面被水覆蓋」。', path:'插入 ➔ 新投影片 ▼ ➔ 只有標題', page:'課本第5課 P.29', gif:'gifs/L05_t2_1.gif', check:'第 2 張「只有標題」投影片與標題文字都好了！', exam:'Y', tip:'先新增投影片再打標題。' },
+      { taskNo:'任務 2', taskName:'新增只有標題頁與插海浪圖示', stepNo:'步驟 2.2', cmd:'先找【插入】➔【圖示】按一下，選「大自然與戶外」類別找出【海浪圖示】按一下再按「插入」。', path:'插入 ➔ 圖示 ➔ 大自然與戶外', page:'課本第5課 P.29', gif:'gifs/L05_t2_2.gif', check:'投影片畫面上已經出現海浪圖示！', exam:'Y', tip:'可先選類別再搜尋關鍵字找圖示（P.29）。' },
+      { taskNo:'任務 3', taskName:'海浪改色、複製與靠下對齊', stepNo:'步驟 3.1', cmd:'選取海浪圖示後，先找【格式】➔【圖形填滿 ▼】選深藍色，拖到左下角後複製貼上排滿底部。', path:'格式 ➔ 圖形填滿 / 複製貼上', page:'課本第5課 P.30', gif:'gifs/L05_t3_1.gif', check:'海浪圖示已經變成深藍色並排滿投影片底部！', exam:'Y', tip:'找不到【格式】標籤代表海浪沒被選取（P.30）。' },
+      { taskNo:'任務 3', taskName:'海浪改色、複製與靠下對齊', stepNo:'步驟 3.2', cmd:'用滑鼠框選所有海浪圖示，先找【格式】➔【對齊 ▼】按一下，再找出【靠下對齊】按一下。', path:'格式 ➔ 對齊 ▼ ➔ 靠下對齊', page:'課本第5課 P.30', gif:'gifs/L05_t3_2.gif', check:'所有海浪圖示已經整整齊齊靠下對齊了！', exam:'Y', tip:'也要試試看加入兩個山的圖示喔（P.31）。' },
+      { taskNo:'任務 4', taskName:'複製投影片並加入太陽', stepNo:'步驟 4.1', cmd:'先在左側縮圖找【投影片 2】按滑鼠右鍵，找出【複製投影片(A)】按一下，修改標題為「太陽的照射使水蒸發」並插入黃色太陽圖示。', path:'右鍵投影片2 ➔ 複製投影片', page:'課本第5課 P.31', gif:'gifs/L05_t4_1.gif', check:'第 3 張投影片已複製完成，標題和黃色太陽都放好了！', exam:'Y', tip:'複製投影片就不用重畫海浪和山（P.31）。' },
+      { taskNo:'任務 5', taskName:'繪畫水氣弧線並改虛線', stepNo:'步驟 5.1', cmd:'先找【插入】➔【圖案 ▼】➔ 選「手繪多邊形：徒手畫」拖拉畫出水氣，再找【格式】➔【圖案外框 ▼】➔【虛線】改成虛線。', path:'插入 ➔ 圖案 / 格式 ➔ 圖案外框 ➔ 虛線', page:'課本第5課 P.32', gif:'gifs/L05_t5_1.gif', check:'畫面上已經畫出虛線狀的水氣弧線了！', exam:'Y', tip:'也可在圖案外框改顏色（P.32）。' },
+      { taskNo:'任務 6', taskName:'設定太陽脈衝重複 4 次', stepNo:'步驟 6.1', cmd:'先點太陽圖示，找【動畫】➔【脈衝】按一下，再按動畫分組右下角【↘】開啟「預存時間」，把重複設為【4】。', path:'動畫 ➔ 脈衝 ➔ ↘ ➔ 預存時間重複4', page:'課本第5課 P.32–P.33', gif:'gifs/L05_t6_1.gif', check:'太陽已經設定好脈衝閃爍重複 4 次！', exam:'Y', tip:'脈衝屬於黃色星星「強調」類別（P.32）。' },
+      { taskNo:'任務 7', taskName:'設定水氣擦去自下與播完隱藏', stepNo:'步驟 7.1', cmd:'先點水氣圖案，找【動畫】➔【擦去】按一下，再找【效果選項 ▼】➔【自下】按一下。', path:'動畫 ➔ 擦去 ➔ 效果選項 ➔ 自下', page:'課本第5課 P.33', gif:'gifs/L05_t7_1.gif', check:'水氣會由下往上擦去出現，像蒸發一樣！', exam:'Y', tip:'方向選自下才會往上飄（P.33）。' },
+      { taskNo:'任務 7', taskName:'設定水氣擦去自下與播完隱藏', stepNo:'步驟 7.2', cmd:'點右下角【↘】開啟效果選項：在【效果】的「播放動畫後」選【播放動畫後隱藏】，在【預存時間】設「接續前動畫」、延遲【0.5】秒、重複【直到下一次按滑鼠】。', path:'效果選項 ➔ 隱藏與接續前動畫', page:'課本第5課 P.33', gif:'gifs/L05_t7_2.gif', check:'多個水氣會同步循環蒸發並在播完後隱藏！', exam:'Y', tip:'複製圖案時，動畫設定會一併被複製（P.33）。' },
+      { taskNo:'任務 8', taskName:'套用扭轉轉場並全部套用', stepNo:'步驟 8.1', cmd:'先找頂部【轉場】標籤按一下，找出【扭轉】效果按一下，再找右側【全部套用】按一下。', path:'轉場 ➔ 扭轉 ➔ 全部套用', page:'課本第5課 P.34', gif:'gifs/L05_t8_1.gif', check:'每張投影片旁都出現星星，切換時有扭轉動畫了！', exam:'Y', tip:'記得按【全部套用】，所有投影片才會一起有轉場（P.34）。' }
+    ];
+
+    const state = {
+      className: 'P4A', studentNo: '01', lesson: '第5課_水和雲動畫', mode: '練習模式',
+      steps: [], idx: 0, stepStartAt: 0,
+      usedTier1: false, usedTier2: false,
+      doneMap: {}, skipMap: {}, logs: JSON.parse(localStorage.getItem('p4_assist_logs') || '[]')
+    };
+
+    function toLessonCode(lessonName) {
+      const m = String(lessonName || '').match(/^第(\d+)課/);
+      return m ? ('L' + m[1].padStart(2, '0')) : String(lessonName || '').split('_')[0];
+    }
+
+    function getMacauTimestamp() {
+      return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    // 初始化學號 01-40
+    const selNo = document.getElementById('sel-no');
+    for (let i = 1; i <= 40; i++) {
+      const v = String(i).padStart(2, '0');
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = v + ' 號';
+      selNo.appendChild(opt);
+    }
+
+    function selectMode(m) {
+      state.mode = m;
+      document.getElementById('mode-practice').classList.toggle('active', m === '練習模式');
+      document.getElementById('mode-exam').classList.toggle('active', m === '考試模式');
+    }
+
+    async function loadLessonSteps(sheetName) {
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.TASK_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+      try {
+        const res = await fetch(url, { mode: 'cors' });
+        const text = await res.text();
+        const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+        const rows = (json.table.rows || []).map(r => (r.c || []).map(c => (c && c.v != null ? String(c.v) : '')));
+        const parsed = rows.filter(r => r[2]).map(r => ({
+          taskNo: r[0], taskName: r[1], stepNo: r[2], cmd: r[3], path: r[4],
+          page: r[5], gif: r[6], check: r[7], exam: r[8] || 'Y', tip: r[9] || ''
+        }));
+        if (parsed.length > 0) return { data: parsed, source: '雲端總表即時載入' };
+      } catch (e) {}
+      if (sheetName === '第5課_水和雲動畫') return { data: L05_FALLBACK, source: '第5課內建同步資料' };
+      alert('目前無法即時連線 Google 試算表，將先為您載入《第5課_水和雲動畫》示範任務。');
+      return { data: L05_FALLBACK, source: '第5課內建備援資料' };
+    }
+
+    async function startSession() {
+      state.className = document.getElementById('sel-class').value;
+      state.studentNo = document.getElementById('sel-no').value;
+      state.lesson = document.getElementById('sel-lesson').value;
+      const loaded = await loadLessonSteps(state.lesson);
+      state.steps = state.mode === '考試模式' ? loaded.data.filter(s => s.exam !== 'N') : loaded.data;
+      state.idx = 0; state.doneMap = {}; state.skipMap = {};
+      document.getElementById('sheet-status').textContent = loaded.source;
+      document.getElementById('hdr-student').textContent = `${state.className}-${state.studentNo}`;
+      const modeEl = document.getElementById('hdr-mode');
+      modeEl.textContent = state.mode;
+      modeEl.classList.toggle('pill-exam', state.mode === '考試模式');
+      document.getElementById('btn-top-home').classList.remove('hidden');
+      document.getElementById('view-home').classList.add('hidden');
+      document.getElementById('view-complete').classList.add('hidden');
+      document.getElementById('view-step').classList.remove('hidden');
+      document.getElementById('bottom-nav').classList.remove('hidden');
+      renderStep();
+    }
+
+    function renderStep() {
+      const s = state.steps[state.idx];
+      state.stepStartAt = Date.now();
+      state.usedTier1 = false; state.usedTier2 = false;
+      document.getElementById('txt-lesson-title').textContent = state.lesson;
+      document.getElementById('txt-progress').textContent = `${state.idx + 1} / ${state.steps.length}`;
+      document.getElementById('progress-fill').style.width = `${Math.round(((state.idx + 1) / state.steps.length) * 100)}%`;
+      document.getElementById('txt-task').textContent = `${s.taskNo} · ${s.taskName}`;
+      document.getElementById('txt-step-num').textContent = s.stepNo;
+      document.getElementById('txt-instruction').textContent = s.cmd;
+      document.getElementById('txt-path').textContent = s.path;
+      document.getElementById('txt-page').textContent = s.page;
+      document.getElementById('txt-tip').textContent = s.tip || '留意按鈕位置與圖示名稱。';
+
+      const imgEl = document.getElementById('img-gif');
+      const fbEl = document.getElementById('gif-fallback');
+      imgEl.style.display = 'block';
+      fbEl.classList.add('hidden');
+      imgEl.src = s.gif;
+
+      document.getElementById('txt-verify').textContent = s.check;
+      document.getElementById('chk-verify').checked = !!state.doneMap[state.idx];
+      document.getElementById('hint-tier1').classList.add('hidden');
+      document.getElementById('hint-tier2').classList.add('hidden');
+
+      const isExam = state.mode === '考試模式';
+      document.getElementById('hint-controls').classList.toggle('hidden', isExam);
+      document.getElementById('box-path').classList.toggle('hidden', isExam);
+
+      // 步驟導覽點（支援考試模式切換時記錄跳過狀態）
+      const dots = document.getElementById('step-dots');
+      dots.innerHTML = '';
+      state.steps.forEach((_, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dot-btn' + (i === state.idx ? ' current' : state.doneMap[i] ? ' done' : state.skipMap[i] ? ' skipped' : '');
+        b.textContent = i + 1;
+        b.disabled = !isExam && i > state.idx && !state.doneMap[i - 1];
+        b.onclick = () => {
+          if (i === state.idx) return;
+          if (isExam) {
+            const skipped = !state.doneMap[state.idx];
+            if (skipped) state.skipMap[state.idx] = true;
+            recordCurrentStep(skipped);
+          } else if (state.doneMap[state.idx]) {
+            recordCurrentStep(false);
+          }
+          state.idx = i;
+          renderStep();
+        };
+        dots.appendChild(b);
+      });
+
+      document.getElementById('btn-prev').disabled = state.idx === 0;
+      const nextBtn = document.getElementById('btn-next');
+      if (isExam && !state.doneMap[state.idx]) {
+        nextBtn.textContent = state.idx === state.steps.length - 1 ? '跳過並交卷 ▶' : '跳過此題 ▶';
+        nextBtn.className = 'btn btn-skip';
+        nextBtn.disabled = false;
+      } else {
+        nextBtn.textContent = state.idx === state.steps.length - 1 ? '完成本課 🎉' : '下一步 ▶';
+        nextBtn.className = 'btn btn-green';
+        nextBtn.disabled = !isExam && !state.doneMap[state.idx];
+      }
+    }
+
+    function toggleHint(tier) {
+      if (tier === 1) {
+        state.usedTier1 = true;
+        document.getElementById('hint-tier1').classList.toggle('hidden');
+      } else {
+        state.usedTier2 = true;
+        document.getElementById('hint-tier2').classList.toggle('hidden');
+      }
+    }
+
+    function onVerifyChange() {
+      const checked = document.getElementById('chk-verify').checked;
+      state.doneMap[state.idx] = checked;
+      if (checked) delete state.skipMap[state.idx];
+      const isExam = state.mode === '考試模式';
+      const nextBtn = document.getElementById('btn-next');
+      if (isExam && !checked) {
+        nextBtn.textContent = state.idx === state.steps.length - 1 ? '跳過並交卷 ▶' : '跳過此題 ▶';
+        nextBtn.className = 'btn btn-skip';
+        nextBtn.disabled = false;
+      } else {
+        nextBtn.textContent = state.idx === state.steps.length - 1 ? '完成本課 🎉' : '下一步 ▶';
+        nextBtn.className = 'btn btn-green';
+        nextBtn.disabled = !isExam && !checked;
+      }
+    }
+
+    function recordCurrentStep(skipped) {
+      const s = state.steps[state.idx];
+      if (!s) return;
+      const sec = Math.max(1, Math.round((Date.now() - state.stepStartAt) / 1000));
+      const row = {
+        ts: getMacauTimestamp(),
+        className: state.className,
+        studentNo: state.studentNo,
+        studentId: `${state.className}-${state.studentNo}`,
+        lessonCode: toLessonCode(state.lesson),
+        lessonName: state.lesson,
+        mode: state.mode,
+        stepNo: s.stepNo,
+        sec,
+        tier1: state.usedTier1 ? 1 : 0,
+        tier2: state.usedTier2 ? 1 : 0,
+        verified: state.doneMap[state.idx] ? 1 : 0,
+        skipped: skipped ? 1 : 0
+      };
+      // 以 (studentId, lessonCode, mode, stepNo) 去重覆寫，避免重做或回看重複記錄
+      const existIdx = state.logs.findIndex(r =>
+        r.studentId === row.studentId &&
+        r.lessonCode === row.lessonCode &&
+        r.mode === row.mode &&
+        r.stepNo === row.stepNo
+      );
+      if (existIdx >= 0) {
+        state.logs[existIdx] = row;
+      } else {
+        state.logs.push(row);
+      }
+      localStorage.setItem('p4_assist_logs', JSON.stringify(state.logs));
+      if (CONFIG.GAS_LOG_URL) {
+        fetch(CONFIG.GAS_LOG_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(row) }).catch(() => {});
+      }
+    }
+
+    function nextStep() {
+      const skipped = state.mode === '考試模式' && !state.doneMap[state.idx];
+      if (skipped) state.skipMap[state.idx] = true;
+      recordCurrentStep(skipped);
+      if (state.idx < state.steps.length - 1) {
+        state.idx++;
+        renderStep();
+      } else {
+        showComplete();
+      }
+    }
+
+    function prevStep() {
+      if (state.idx > 0) {
+        if (state.mode === '考試模式') {
+          const skipped = !state.doneMap[state.idx];
+          if (skipped) state.skipMap[state.idx] = true;
+          recordCurrentStep(skipped);
+        } else if (state.doneMap[state.idx]) {
+          recordCurrentStep(false);
+        }
+        state.idx--;
+        renderStep();
+      }
+    }
+
+    function showComplete() {
+      document.getElementById('view-step').classList.add('hidden');
+      document.getElementById('bottom-nav').classList.add('hidden');
+      document.getElementById('view-complete').classList.remove('hidden');
+      const doneCount = Object.values(state.doneMap).filter(Boolean).length;
+      const skipCount = Object.values(state.skipMap).filter(Boolean).length;
+      document.getElementById('txt-summary').textContent =
+        `${state.className}-${state.studentNo}（${state.mode}）：已完成自檢 ${doneCount} 步、跳過 ${skipCount} 步。`;
+    }
+
+    function goHome() {
+      document.getElementById('view-step').classList.add('hidden');
+      document.getElementById('view-complete').classList.add('hidden');
+      document.getElementById('bottom-nav').classList.add('hidden');
+      document.getElementById('btn-top-home').classList.add('hidden');
+      document.getElementById('view-home').classList.remove('hidden');
+      document.getElementById('hdr-mode').textContent = '主頁';
+      document.getElementById('hdr-mode').classList.remove('pill-exam');
+    }
+
+    function csvEsc(val) {
+      return '"' + String(val == null ? '' : val).replace(/"/g, '""') + '"';
+    }
+
+    function exportLogsCSV() {
+      const header = ['時間戳記','班別','學號','學生識別碼','課次編號','課次名稱','模式','步驟編號','該步耗時(秒)','查看頁碼提示','查看GIF提示','完成自檢','考試跳過'].map(csvEsc).join(',') + '\n';
+      const body = state.logs.map(r => [
+        r.ts, r.className, r.studentNo, r.studentId, r.lessonCode, r.lessonName,
+        r.mode, r.stepNo, r.sec, r.tier1, r.tier2, r.verified, r.skipped
+      ].map(csvEsc).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + header + body], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `P4_學習歷程_${state.className}-${state.studentNo}.csv`;
+      a.click();
+    }
+  </script>
+</body>
+</html>
