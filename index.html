@@ -539,9 +539,7 @@
         stepNo: s.stepNo,
         sec,
         tier1: state.usedTier1 ? 1 : 0,
-        tier2: state.usedTier2 ? 1 : 0,
-        verified: state.doneMap[state.idx] ? 1 : 0,
-        skipped: skipped ? 1 : 0
+        tier2: state.usedTier2 ? 1 : 0
       };
       // 以 (studentId, lessonCode, mode, stepNo) 去重覆寫，避免重做或回看重複記錄
       const existIdx = state.logs.findIndex(r =>
@@ -592,9 +590,8 @@
       document.getElementById('bottom-nav').classList.add('hidden');
       document.getElementById('view-complete').classList.remove('hidden');
       const doneCount = Object.values(state.doneMap).filter(Boolean).length;
-      const skipCount = Object.values(state.skipMap).filter(Boolean).length;
       document.getElementById('txt-summary').textContent =
-        `${state.className}-${state.studentNo}（${state.mode}）：已完成自檢 ${doneCount} 步、跳過 ${skipCount} 步。`;
+        `${state.className}-${state.studentNo}（${state.mode}）：已完成全部 ${doneCount} 步操作練習！`;
     }
 
     function goHome() {
@@ -612,10 +609,10 @@
     }
 
     function exportLogsCSV() {
-      const header = ['時間戳記','班別','學號','學生識別碼','課次編號','課次名稱','模式','步驟編號','該步耗時(秒)','查看頁碼提示','查看GIF提示','完成自檢','考試跳過'].map(csvEsc).join(',') + '\n';
+      const header = ['時間戳記','班別','學號','學生識別碼','課次編號','課次名稱','模式','步驟編號','該步耗時(秒)','查看頁碼提示','查看GIF提示'].map(csvEsc).join(',') + '\n';
       const body = state.logs.map(r => [
         r.ts, r.className, r.studentNo, r.studentId, r.lessonCode, r.lessonName,
-        r.mode, r.stepNo, r.sec, r.tier1, r.tier2, r.verified, r.skipped
+        r.mode, r.stepNo, r.sec, r.tier1, r.tier2
       ].map(csvEsc).join(',')).join('\n');
       const blob = new Blob(['\uFEFF' + header + body], { type: 'text/csv;charset=utf-8;' });
       const a = document.createElement('a');
